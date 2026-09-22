@@ -1,0 +1,45 @@
+---
+import NavMenu from '../components/NavMenu.astro';
+import SiteFooter from '../components/SiteFooter.astro';
+import '../styles/tokens.css';
+
+export interface Props {
+  title: string;
+  description?: string;
+  locale: 'en' | 'mt';
+  path: string;
+}
+const { title, description, locale, path } = Astro.props;
+---
+
+<!doctype html>
+<html lang={locale}>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{title} — studio/sturnell</title>
+    {description && <meta name="description" content={description} />}
+    <link rel="alternate" hreflang="en" href={`https://sturnell.com${path}`} />
+    <link rel="alternate" hreflang="mt" href={`https://sturnell.com/mt${path === '/' ? '' : path}`} />
+
+    <!--
+      Fonts: Inter is on Google Fonts. "Abridge" (the display headline face)
+      is not — this project's font licensing was flagged as an open item on
+      the asset checklist and still needs Jeremy to confirm the source/license
+      before we self-host the actual font files. Falls back to Inter until then.
+    -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+  </head>
+  <body>
+    <NavMenu locale={locale} path={path} />
+    <main>
+      <slot />
+    </main>
+    <SiteFooter locale={locale} />
+  </body>
+</html>

@@ -1,0 +1,48 @@
+/*
+  sturnell.com — design tokens
+  Pulled directly from the Figma file (sturnell_site_v2, node 36:798 and siblings).
+  Light theme only for now — the Figma file doesn't define a dark variant, so this
+  is a straightforward :root, not the light/dark split used in Claude's own reference
+  artifacts for this project.
+*/
+
+:root {
+  --paper: #fffdeb;
+  --ink: #012114;
+  --ink-60: rgba(1, 33, 20, 0.6);
+  --placeholder: #d9d9d9;
+
+  --font-ui: 'Inter', system-ui, sans-serif;
+  --font-display: 'Abridge', var(--font-ui);
+
+  --nav-height: 147px;
+  --footer-height: 88px;
+  --page-max-width: 1728px;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-ui);
+}
+
+body {
+  min-height: 100vh;
+}
+
+img,
+svg {
+  display: block;
+  max-width: 100%;
+}
+
+a {
+  color: inherit;
+}

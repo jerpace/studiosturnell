@@ -1,0 +1,138 @@
+---
+import { fetchSanity } from '../../lib/sanity';
+
+export interface Props {
+  locale: 'en' | 'mt';
+}
+const { locale } = Astro.props;
+
+interface StudioContent {
+  bio: string;
+}
+
+const fallback: StudioContent = {
+  bio: `It starts with a "what if." A Big Idea. A vision for something the world doesn't have yet.
+
+Studio Sturnell brings Big Ideas to life, turning them into experiences that engage an audience. Experiences that build real, lasting relationships with a brand.
+
+Every detail matters here. It's not just about building distinctive visual identities — it's about shaping experiences people remember.
+
+Studio Sturnell.
+Where Brands Become Experiences.`,
+};
+
+const content = await fetchSanity<StudioContent>(
+  `*[_type == "studio"][0]{ "bio": bio.${locale} }`,
+  fallback
+);
+
+const paragraphs = content.bio.split('\n\n');
+---
+
+<section class="studio">
+  <div class="studio__scene">
+    <div class="studio__image studio__image--1" />
+    <div class="studio__image studio__image--2" />
+
+    <div class="studio__bio">
+      {paragraphs.map((p) => <p>{p}</p>)}
+    </div>
+  </div>
+
+  <div class="studio__scene-mobile">
+    <div class="studio__mobile-image" />
+    <div class="studio__mobile-bio">
+      {paragraphs.map((p) => <p>{p}</p>)}
+    </div>
+  </div>
+</section>
+
+<style>
+  .studio {
+    max-width: var(--page-max-width);
+    margin: 0 auto;
+    padding: 0 clamp(20px, 2.66vw, 46px);
+  }
+
+  .studio__scene {
+    position: relative;
+    width: 100%;
+    height: 0;
+    padding-top: 53.91%; /* 882 / 1636 — avoids aspect-ratio + % height children layout bugs */
+  }
+
+  .studio__image {
+    position: absolute;
+    width: 19.16%;
+    height: 77.32%;
+    background: var(--placeholder);
+    border-radius: 40px;
+  }
+
+  .studio__image--1 {
+    left: 2.09%;
+    top: 5.56%;
+  }
+
+  .studio__image--2 {
+    left: 25.93%;
+    top: 12.93%;
+  }
+
+  .studio__bio {
+    position: absolute;
+    left: 58.28%;
+    top: 18.71%;
+    width: 31.83%;
+    font-size: clamp(16px, 1.4vw, 24px);
+    line-height: 1.4;
+    color: var(--ink);
+  }
+
+  .studio__bio p {
+    margin: 0 0 1.4em;
+  }
+
+  .studio__bio p:last-child {
+    margin-bottom: 0;
+  }
+
+  .studio__scene-mobile {
+    display: none;
+  }
+
+  @media (max-width: 900px) {
+    .studio {
+      padding: 0;
+    }
+
+    .studio__scene {
+      display: none;
+    }
+
+    .studio__scene-mobile {
+      display: block;
+    }
+
+    .studio__mobile-image {
+      width: 100%;
+      aspect-ratio: 402 / 612;
+      background: var(--placeholder);
+    }
+
+    .studio__mobile-bio {
+      padding: 40px 24px;
+      font-size: 15px;
+      line-height: 1.5;
+      color: var(--ink);
+    }
+
+    .studio__mobile-bio p {
+      margin: 0 0 1.4em;
+    }
+
+    .studio__mobile-bio p:last-child {
+      margin-bottom: 0;
+    }
+  }
+</style>

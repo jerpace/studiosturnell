@@ -1,0 +1,109 @@
+---
+// The signature "S" mark: breaks into particles on hover (desktop) or
+// finger-pass (mobile touch), reassembles on release/leave.
+//
+// Falls back to the static composited SVG (public/brand/s-mark-static.svg)
+// whenever /rive/s-mark.riv hasn't been dropped in yet — so the page never
+// breaks while the Rive file is still being built in the editor.
+export interface Props {
+  class?: string;
+}
+const { class: className } = Astro.props;
+---
+
+<div class={['s-mark', className].filter(Boolean).join(' ')} data-s-mark>
+  <canvas data-s-mark-canvas class="s-mark__canvas" aria-hidden="true"></canvas>
+  <img
+    src="/brand/s-mark-static.svg"
+    alt="Studio Sturnell"
+    class="s-mark__fallback"
+    data-s-mark-fallback
+  />
+</div>
+
+<style>
+  .s-mark {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 263 / 564;
+  }
+
+  .s-mark__canvas,
+  .s-mark__fallback {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+  }
+
+  /* Canvas starts hidden; the script reveals it only once the .riv file
+     has actually loaded, so a missing file never shows a blank box. */
+  .s-mark__canvas {
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  .s-mark.is-rive-ready .s-mark__canvas {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  .s-mark.is-rive-ready .s-mark__fallback {
+    opacity: 0;
+  }
+</style>
+
+<script>
+  // Dynamically imported so a missing/broken .riv file never blocks page render.
+  async function initSMark(root: HTMLElement) {
+    const canvas = root.querySelector<HTMLCanvasElement>('[data-s-mark-canvas]');
+    if (!canvas) return;
+
+    // Bail out quietly if the .riv file isn't there yet — the static SVG
+    // fallback stays visible and this is a no-op.
+    const probe = await fetch('/rive/s-mark.riv', { method: 'HEAD' }).catch(() => null);
+    if (!probe || !probe.ok) return;
+
+    const { Rive, Fit, Alignment } = await import('@rive-app/canvas');
+
+    const rive = new Rive({
+      src: '/rive/s-mark.riv',
+      canvas,
+      autoplay: true,
+      fit: Fit.Contain,
+      alignment: Alignment.Center,
+      stateMachines: 'S-Mark', // must match the state machine name set in the Rive editor
+      onLoad: () => {
+        rive.resizeDrawingSurfaceToCanvas();
+        root.classList.add('is-rive-ready');
+      },
+    });
+
+    const inputs = rive.stateMachineInputs('S-Mark');
+    const hovering = inputs?.find((i) => i.name === 'Hovering');
+    if (!hovering) return;
+
+    // Desktop: cursor hover
+    root.addEventListener('pointerenter', (e) => {
+      if (e.pointerType === 'mouse') hovering.value = true;
+    });
+    root.addEventListener('pointerleave', (e) => {
+      if (e.pointerType === 'mouse') hovering.value = false;
+    });
+
+    // Mobile: finger passes over the mark, not tap-and-hold
+    root.addEventListener('touchmove', (e) => {
+      const touch = e.touches[0];
+      const el = document.elementFromPoint(touch.clientX, touch.clientY);
+      hovering.value = root.contains(el);
+    }, { passive: true });
+    root.addEventListener('touchend', () => {
+      hovering.value = false;
+    });
+    root.addEventListener('touchcancel', () => {
+      hovering.value = false;
+    });
+  }
+
+  document.querySelectorAll<HTMLElement>('[data-s-mark]').forEach(initSMark);
+</script>

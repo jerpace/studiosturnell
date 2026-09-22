@@ -1,0 +1,60 @@
+---
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+import ProjectBody from '../../../components/pages/ProjectBody.astro';
+import { sanity, sanityConfigured } from '../../../lib/sanity';
+
+interface ProjectDoc {
+  slug: string;
+  title: string;
+  description: string | null;
+  heroUrl: string | null;
+  overlayUrls: string[];
+}
+
+export async function getStaticPaths() {
+  const fallbackProjects: ProjectDoc[] = [1, 2, 3, 4, 5, 6].map((n) => ({
+    slug: `project-${n}`,
+    title: 'Isem il-Proġett',
+    description:
+      'Id-dettalji tal-proġett se jidhru hawn ladarba dan il-proġett jimtela fl-Studio — sfond tal-klijent, il-brief, u l-ħsieb wara x-xogħol.',
+    heroUrl: null,
+    overlayUrls: [],
+  }));
+
+  let projects: ProjectDoc[] = fallbackProjects;
+
+  if (sanityConfigured && sanity) {
+    try {
+      const result = await sanity.fetch<ProjectDoc[]>(
+        `*[_type == "project"]{
+          "slug": slug.current,
+          "title": title.mt,
+          "description": description.mt,
+          "heroUrl": heroImage.asset->url,
+          "overlayUrls": overlayImages[].asset->url
+        }`
+      );
+      if (result && result.length > 0) projects = result;
+    } catch {
+      // network/build-time fetch failed — fall back to placeholder projects
+    }
+  }
+
+  return projects.map((project) => ({
+    params: { slug: project.slug },
+    props: { project },
+  }));
+}
+
+const { project } = Astro.props as { project: ProjectDoc };
+---
+
+<BaseLayout title={project.title} locale="mt" path={`/work/${project.slug}`}>
+  <ProjectBody
+    locale="mt"
+    title={project.title}
+    description={project.description ?? ''}
+    heroUrl={project.heroUrl}
+    overlayUrls={project.overlayUrls ?? []}
+  />
+</BaseLayout>

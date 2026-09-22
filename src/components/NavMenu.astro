@@ -1,0 +1,246 @@
+---
+export interface Props {
+  locale: 'en' | 'mt';
+  path: string; // current path without locale prefix, e.g. "/", "/studio"
+}
+const { locale, path } = Astro.props;
+
+const links = [
+  { href: '/', label_en: 'Home', label_mt: 'Home' },
+  { href: '/studio', label_en: 'Studio', label_mt: 'Studjo' },
+  { href: '/work', label_en: 'Work', label_mt: 'Xogħol' },
+  { href: '/contact', label_en: 'Contact', label_mt: 'Kuntatt' },
+];
+
+function localizedHref(href: string) {
+  return locale === 'en' ? href : `/mt${href}`;
+}
+---
+
+<header class="nav">
+  <nav class="nav__links" aria-label="Primary">
+    {links.map((link) => (
+      <a
+        href={localizedHref(link.href)}
+        class="nav__link"
+        aria-current={path === link.href ? 'page' : undefined}
+      >
+        {locale === 'en' ? link.label_en : link.label_mt}
+      </a>
+    ))}
+  </nav>
+
+  <a href="/" class="nav__wordmark" aria-label="studio/sturnell — home">
+    <img src="/brand/wordmark.svg" alt="" width="132" height="14" />
+  </a>
+
+  <div class="nav__lang" role="group" aria-label="Language">
+    <a href={path} class:list={['nav__lang-option', { 'is-active': locale === 'en' }]}>English</a>
+    <a href={`/mt${path === '/' ? '' : path}`} class:list={['nav__lang-option', { 'is-active': locale === 'mt' }]}>Malti</a>
+  </div>
+</header>
+
+<header class="nav-mobile">
+  <input type="checkbox" id="nav-mobile-menu-toggle" class="nav-mobile__checkbox" />
+  <input type="checkbox" id="nav-mobile-lang-toggle" class="nav-mobile__checkbox" />
+
+  <div class="nav-mobile__bar">
+    <label for="nav-mobile-menu-toggle" class="nav-mobile__menu-btn" aria-label="Menu">
+      <img src="/brand/menu-idle.svg" alt="" class="nav-mobile__menu-icon nav-mobile__menu-icon--idle" />
+      <img src="/brand/menu-open.svg" alt="" class="nav-mobile__menu-icon nav-mobile__menu-icon--open" />
+    </label>
+
+    <a href="/" class="nav-mobile__wordmark" aria-label="studio/sturnell — home">
+      <img src="/brand/wordmark-mobile.svg" alt="" width="118" height="14" />
+    </a>
+
+    <label for="nav-mobile-lang-toggle" class="nav-mobile__lang-btn" aria-label="Language">
+      <img src="/brand/lang-globe.svg" alt="" width="34" height="34" />
+    </label>
+  </div>
+
+  <!-- Nav links overlay: dark full-panel, right-aligned links (Figma: sturnell_navigation_mobile_menu-overlay) -->
+  <div class="nav-mobile__overlay nav-mobile__overlay--menu">
+    <nav class="nav-mobile__links" aria-label="Primary">
+      {links.map((link) => (
+        <a
+          href={localizedHref(link.href)}
+          class="nav-mobile__link"
+          aria-current={path === link.href ? 'page' : undefined}
+        >
+          {locale === 'en' ? link.label_en : link.label_mt}
+        </a>
+      ))}
+    </nav>
+  </div>
+
+  <!-- Language overlay: dark full-panel, left-aligned English/Malti (Figma: sturnell_navigation_mobile_language-overlay) -->
+  <div class="nav-mobile__overlay nav-mobile__overlay--lang">
+    <div class="nav-mobile__lang-links" role="group" aria-label="Language">
+      <a href={path} class:list={['nav-mobile__link', 'nav-mobile__link--lang', { 'is-active': locale === 'en' }]}>English</a>
+      <a href={`/mt${path === '/' ? '' : path}`} class:list={['nav-mobile__link', 'nav-mobile__link--lang', { 'is-active': locale === 'mt' }]}>Malti</a>
+    </div>
+  </div>
+</header>
+
+<style>
+  .nav {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 24px;
+    padding: 0 clamp(20px, 2.66vw, 46px);
+    height: var(--nav-height);
+    background: var(--paper);
+  }
+
+  .nav__links {
+    display: flex;
+    gap: clamp(16px, 2.2vw, 32px);
+  }
+
+  .nav__link {
+    text-decoration: none;
+    font-size: 20px;
+    color: var(--ink-60);
+  }
+
+  .nav__link[aria-current='page'] {
+    color: var(--ink);
+  }
+
+  .nav__wordmark img {
+    height: 14px;
+    width: auto;
+  }
+
+  .nav__lang {
+    display: flex;
+    gap: 9px;
+  }
+
+  .nav__lang-option {
+    font-family: var(--font-ui);
+    font-weight: 600;
+    font-size: 10px;
+    text-decoration: none;
+    text-align: center;
+    padding: 2px 10px;
+    border: 1px solid var(--ink);
+    color: var(--ink);
+  }
+
+  .nav__lang-option.is-active {
+    background: var(--ink);
+    color: #d9d9d9;
+  }
+
+  /* Desktop nav hidden below the mobile breakpoint; mobile bar takes over. */
+  .nav-mobile {
+    display: none;
+  }
+
+  @media (max-width: 900px) {
+    .nav {
+      display: none;
+    }
+
+    .nav-mobile {
+      display: block;
+      position: relative;
+      background: var(--paper);
+    }
+
+    .nav-mobile__checkbox {
+      position: absolute;
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .nav-mobile__bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 152px;
+      padding: 0 24px;
+    }
+
+    .nav-mobile__menu-btn,
+    .nav-mobile__lang-btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 34px;
+      height: 34px;
+      cursor: pointer;
+    }
+
+    .nav-mobile__menu-icon {
+      width: 24px;
+      height: 20px;
+    }
+
+    .nav-mobile__menu-icon--open {
+      display: none;
+      width: 17px;
+      height: 17px;
+    }
+
+    .nav-mobile__checkbox:checked ~ .nav-mobile__bar .nav-mobile__menu-icon--idle {
+      display: none;
+    }
+
+    .nav-mobile__checkbox:checked ~ .nav-mobile__bar .nav-mobile__menu-icon--open {
+      display: block;
+    }
+
+    .nav-mobile__wordmark img {
+      height: 14px;
+      width: auto;
+    }
+
+    .nav-mobile__overlay {
+      display: none;
+      position: absolute;
+      left: 0;
+      right: 0;
+      top: 152px;
+      z-index: 10;
+      background: var(--ink);
+      padding: 40px 32px;
+    }
+
+    #nav-mobile-menu-toggle:checked ~ .nav-mobile__overlay--menu,
+    #nav-mobile-lang-toggle:checked ~ .nav-mobile__overlay--lang {
+      display: flex;
+    }
+
+    .nav-mobile__links {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 20px;
+      width: 100%;
+    }
+
+    .nav-mobile__lang-links {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 12px;
+    }
+
+    .nav-mobile__link {
+      text-decoration: none;
+      font-size: 24px;
+      color: #f9f5d7;
+      opacity: 0.85;
+    }
+
+    .nav-mobile__link[aria-current='page'],
+    .nav-mobile__link--lang.is-active {
+      opacity: 1;
+      text-decoration: underline;
+    }
+  }
+</style>

@@ -1,0 +1,162 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import RiveMark from '../components/RiveMark.astro';
+import { fetchSanity } from '../lib/sanity';
+
+interface HomeContent {
+  headline: string;
+}
+
+const fallback: HomeContent = {
+  headline: 'Where brands become experiences',
+};
+
+const content = await fetchSanity<HomeContent>(
+  `*[_type == "home"][0]{ "headline": headline.en }`,
+  fallback
+);
+---
+
+<BaseLayout title="Home" locale="en" path="/">
+  <section class="home">
+    <div class="home__scene">
+      <div class="home__portrait home__portrait--1" />
+      <div class="home__portrait home__portrait--2" />
+      <div class="home__portrait home__portrait--3" />
+
+      <h1 class="home__headline">{content.headline}</h1>
+
+      <RiveMark class="home__mark" />
+    </div>
+
+    <div class="home__scene-mobile">
+      <div class="home__mobile-image">
+        <RiveMark class="home__mobile-mark" />
+      </div>
+      <h1 class="home__mobile-headline">{content.headline}</h1>
+    </div>
+  </section>
+</BaseLayout>
+
+<style>
+  /*
+    Desktop scene is positioned to match the Figma frame
+    (sturnell_desktop-home-alt, 1728x882 content area) using percentages
+    of that reference box, so it scales proportionally down to the
+    mobile breakpoint, where a dedicated single-column layout takes over.
+  */
+  .home {
+    max-width: var(--page-max-width);
+    margin: 0 auto;
+    padding: 0 clamp(20px, 2.66vw, 46px);
+  }
+
+  .home__scene {
+    position: relative;
+    width: 100%;
+    height: 0;
+    padding-top: 53.91%; /* 882 / 1636 — avoids aspect-ratio + % height children layout bugs */
+  }
+
+  .home__portrait {
+    position: absolute;
+    width: 19.16%;
+    height: 77.32%;
+    background: var(--placeholder);
+    border-radius: 40px;
+  }
+
+  .home__portrait--1 {
+    left: 0;
+    top: 7.37%;
+  }
+
+  .home__portrait--2 {
+    left: 54.4%;
+    top: 2.61%;
+    z-index: 1;
+  }
+
+  .home__portrait--3 {
+    left: 78.18%;
+    top: 14.74%;
+  }
+
+  .home__headline {
+    position: absolute;
+    left: 23.78%;
+    top: 45.64%;
+    transform: translateY(-50%);
+    width: 15.5%;
+    min-width: 220px;
+    margin: 0;
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: clamp(24px, 2.9vw, 50px);
+    line-height: 1.05;
+    text-transform: uppercase;
+    color: var(--ink);
+  }
+
+  /*
+    :global() is required here — RiveMark's root element only carries its
+    own component's scope attribute, not index.astro's, so a plain scoped
+    ".home__mark" selector silently never matches (Astro scoped-CSS gotcha
+    for classes forwarded into a child component via a `class` prop).
+  */
+  :global(.home__mark.home__mark) {
+    position: absolute;
+    left: 50%;
+    top: 46.66%;
+    transform: translate(-50%, -50%);
+    width: 15.22%;
+    min-width: 140px;
+    z-index: 2;
+  }
+
+  .home__scene-mobile {
+    display: none;
+  }
+
+  @media (max-width: 900px) {
+    .home {
+      padding: 0;
+    }
+
+    .home__scene {
+      display: none;
+    }
+
+    .home__scene-mobile {
+      display: block;
+    }
+
+    .home__mobile-image {
+      position: relative;
+      width: 100%;
+      height: 0;
+      padding-top: 152.24%; /* 612 / 402 */
+      background: var(--placeholder);
+    }
+
+    :global(.home__mobile-mark.home__mobile-mark) {
+      position: absolute;
+      left: 50%;
+      top: 47%;
+      transform: translate(-50%, -50%);
+      width: 54%;
+    }
+
+    .home__mobile-headline {
+      margin: 0;
+      padding: 48px 24px;
+      font-family: var(--font-display);
+      font-weight: 700;
+      font-size: 34px;
+      line-height: 0.9;
+      text-align: center;
+      text-transform: uppercase;
+      color: var(--ink);
+    }
+  }
+</style>

@@ -1,0 +1,54 @@
+---
+export interface Props {
+  locale: 'en' | 'mt';
+}
+const { locale } = Astro.props;
+const year = new Date().getFullYear();
+const rights_en = `©${year} ALL RIGHTS RESERVED / STUDIO/STURNELL`;
+const rights_mt = `©${year} ID-DRITTIJIET KOLLHA RIŻERVATI / STUDIO/STURNELL`;
+---
+
+<footer class="footer">
+  <div class="footer__mark">
+    <img src="/brand/ghasfur.svg" alt="" width="40" height="32" />
+  </div>
+  <p class="footer__rights">{locale === 'en' ? rights_en : rights_mt}</p>
+</footer>
+
+<style>
+  .footer {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    height: var(--footer-height);
+    padding: 12px 0;
+  }
+
+  .footer__mark img {
+    height: 32px;
+    width: auto;
+  }
+
+  .footer__rights {
+    margin: 0;
+    font-family: var(--font-ui);
+    font-weight: 600;
+    font-size: 8px;
+    text-align: center;
+    color: var(--ink);
+  }
+
+  /* Mobile footer is taller (110px vs 88px) per Figma mobile frames */
+  @media (max-width: 900px) {
+    .footer {
+      height: 110px;
+    }
+
+    .footer__mark img {
+      height: auto;
+      width: 59px;
+    }
+  }
+</style>

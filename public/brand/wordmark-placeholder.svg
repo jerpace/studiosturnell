@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 220 24" role="img" aria-label="studio/sturnell">
+  <!--
+    PLACEHOLDER — not the real Figma wordmark.
+    Figma's asset CDN isn't reachable from this environment's network policy,
+    so this is a plain-text stand-in. Swap it for the real export:
+    in Figma, select "StudioSturnell_Word-Mark-012114" (node 160:145) →
+    right-click → Export → SVG, and replace this file at the same path.
+  -->
+  <text x="0" y="18" font-family="Inter, sans-serif" font-weight="600" font-size="18" fill="#012114">studio/sturnell</text>
+</svg>

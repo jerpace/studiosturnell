@@ -1,0 +1,174 @@
+---
+import { fetchSanity } from '../../lib/sanity';
+
+export interface Props {
+  locale: 'en' | 'mt';
+}
+const { locale } = Astro.props;
+
+interface ContactContent {
+  email: string;
+  phone: string;
+  instagramUrl: string;
+  linkedinUrl: string;
+}
+
+const fallback: ContactContent = {
+  email: 'jeremy@sturnell.com',
+  phone: '+356 9980 2800',
+  instagramUrl: 'https://instagram.com',
+  linkedinUrl: 'https://linkedin.com',
+};
+
+const content = await fetchSanity<ContactContent>(
+  `*[_type == "contact"][0]{ email, phone, instagramUrl, linkedinUrl }`,
+  fallback
+);
+
+const heading = locale === 'en' ? 'GET IN TOUCH:' : 'IKKUNTATTJANA:';
+const rowLabels = locale === 'en'
+  ? { email: 'Email', phone: 'Mobile/WhatsApp', follow: 'Follow' }
+  : { email: 'Email', phone: 'Mobile/WhatsApp', follow: 'Segwina' };
+---
+
+<section class="contact">
+  <div class="contact__scene">
+    <h1 class="contact__heading">{heading}</h1>
+
+    <div class="contact__grid">
+      {Array.from({ length: 6 }).map(() => <div class="contact__tile" />)}
+    </div>
+
+    <div class="contact__rows">
+      <div class="contact__row">
+        <p class="contact__label">{rowLabels.email}</p>
+        <a href={`mailto:${content.email}`} class="contact__value">{content.email}</a>
+      </div>
+      <div class="contact__row">
+        <p class="contact__label">{rowLabels.phone}</p>
+        <a href={`tel:${content.phone.replace(/\s+/g, '')}`} class="contact__value">{content.phone}</a>
+      </div>
+      <div class="contact__row">
+        <p class="contact__label">{rowLabels.follow}</p>
+        <div class="contact__follow">
+          <a href={content.instagramUrl} class="contact__value" target="_blank" rel="noopener">Instagram</a>
+          <a href={content.linkedinUrl} class="contact__value" target="_blank" rel="noopener">Linkedin</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<style>
+  .contact {
+    max-width: var(--page-max-width);
+    margin: 0 auto;
+    padding: 0 clamp(20px, 2.66vw, 46px);
+  }
+
+  .contact__scene {
+    position: relative;
+    width: 100%;
+    height: 0;
+    padding-top: 51.04%; /* 882 / 1728 */
+  }
+
+  .contact__heading {
+    position: absolute;
+    left: 58.33%;
+    top: 30.7%;
+    margin: 0;
+    width: 23%;
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: clamp(32px, 4.28vw, 74px);
+    line-height: 1;
+    color: var(--ink);
+  }
+
+  .contact__grid {
+    position: absolute;
+    left: 8.65%;
+    top: 2.27%;
+    width: 34.14%;
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 26px;
+  }
+
+  .contact__tile {
+    aspect-ratio: 1 / 1;
+    background: var(--placeholder);
+  }
+
+  .contact__rows {
+    position: absolute;
+    left: 58.33%;
+    top: 54.76%;
+    width: 31.83%;
+    display: flex;
+    flex-direction: column;
+    gap: 68px;
+  }
+
+  .contact__label,
+  .contact__value {
+    margin: 0;
+    font-size: 20px;
+  }
+
+  .contact__label {
+    color: var(--ink);
+  }
+
+  .contact__value {
+    display: inline-block;
+    margin-top: 8px;
+    color: var(--ink-60);
+    text-decoration: none;
+  }
+
+  .contact__value:hover {
+    color: var(--ink);
+  }
+
+  .contact__follow {
+    display: flex;
+    gap: 32px;
+  }
+
+  @media (max-width: 900px) {
+    .contact {
+      padding: 24px 24px 64px;
+    }
+
+    .contact__scene {
+      height: auto;
+      padding-top: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 40px;
+    }
+
+    .contact__heading,
+    .contact__grid,
+    .contact__rows {
+      position: static;
+      width: auto;
+      left: auto;
+      top: auto;
+    }
+
+    .contact__heading {
+      font-size: 40px;
+    }
+
+    .contact__grid {
+      display: none; /* mobile contact omits the lottie grid per Figma */
+    }
+
+    .contact__rows {
+      gap: 40px;
+    }
+  }
+</style>
