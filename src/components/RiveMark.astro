@@ -1,6 +1,10 @@
 ---
-// The signature "S" mark: breaks into particles on hover (desktop) or
-// finger-pass (mobile touch), reassembles on release/leave.
+// The signature "S" mark: dissolves into one of several "murmuration"
+// particle patterns on hover (desktop) or finger-pass (mobile touch),
+// reassembles into the crisp mark on release/leave. Which pattern shows is
+// picked at random each time a new hover begins (see the "Variant" input
+// below) — this needs a .riv file with 10 Scatter animations (Scatter0
+// .. Scatter9), same idea and naming as in the build guide.
 //
 // Falls back to the static composited SVG (public/brand/s-mark-static.svg)
 // whenever /rive/s-mark.riv hasn't been dropped in yet — so the page never
@@ -83,26 +87,47 @@ const { class: className } = Astro.props;
     const hovering = inputs?.find((i) => i.name === 'Hovering');
     if (!hovering) return;
 
+    // Optional: a Number input picking which of the 10 murmuration variants
+    // plays (0–9). Older/simpler .riv files without it still work fine —
+    // this just becomes a no-op and the single Scatter animation plays.
+    const variant = inputs?.find((i) => i.name === 'Variant');
+    const VARIANT_COUNT = 10;
+
+    // Only re-roll the variant on the *start* of a hover, not continuously
+    // (touchmove fires repeatedly while a finger stays over the mark).
+    let isHovering = false;
+    function startHover() {
+      if (!isHovering && variant) {
+        variant.value = Math.floor(Math.random() * VARIANT_COUNT);
+      }
+      isHovering = true;
+      hovering.value = true;
+    }
+    function endHover() {
+      isHovering = false;
+      hovering.value = false;
+    }
+
     // Desktop: cursor hover
     root.addEventListener('pointerenter', (e) => {
-      if (e.pointerType === 'mouse') hovering.value = true;
+      if (e.pointerType === 'mouse') startHover();
     });
     root.addEventListener('pointerleave', (e) => {
-      if (e.pointerType === 'mouse') hovering.value = false;
+      if (e.pointerType === 'mouse') endHover();
     });
 
     // Mobile: finger passes over the mark, not tap-and-hold
     root.addEventListener('touchmove', (e) => {
       const touch = e.touches[0];
       const el = document.elementFromPoint(touch.clientX, touch.clientY);
-      hovering.value = root.contains(el);
+      if (root.contains(el)) {
+        startHover();
+      } else {
+        endHover();
+      }
     }, { passive: true });
-    root.addEventListener('touchend', () => {
-      hovering.value = false;
-    });
-    root.addEventListener('touchcancel', () => {
-      hovering.value = false;
-    });
+    root.addEventListener('touchend', endHover);
+    root.addEventListener('touchcancel', endHover);
   }
 
   document.querySelectorAll<HTMLElement>('[data-s-mark]').forEach(initSMark);

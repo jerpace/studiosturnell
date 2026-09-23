@@ -19,32 +19,35 @@ const content = await fetchSanity<HomeContent>(
 
 <BaseLayout title="Home" locale="en" path="/">
   <section class="home">
-    <div class="home__marquee">
-      <div class="home__track">
-        <div class="home__track-set">
-          <div class="home__panel" />
-          <div class="home__headline-panel">
-            <h1 class="home__headline">{content.headline}</h1>
+    <div class="home__scene">
+      <div class="home__marquee">
+        <div class="home__track">
+          <div class="home__track-set">
+            <div class="home__panel" />
+            <div class="home__headline-panel">
+              <h1 class="home__headline">{content.headline}</h1>
+            </div>
+            <div class="home__panel" />
+            <div class="home__panel" />
           </div>
-          <div class="home__panel home__panel--mark-host">
-            <RiveMark class="home__mark" />
-          </div>
-          <div class="home__panel" />
-        </div>
 
-        <!-- Duplicate set for a seamless loop. aria-hidden + a static image
-             (rather than a second live RiveMark) so we don't spin up a
-             second Rive/WebGL instance just for the visual repeat. -->
-        <div class="home__track-set" aria-hidden="true">
-          <div class="home__panel" />
-          <div class="home__headline-panel">
-            <h1 class="home__headline">{content.headline}</h1>
+          <!-- Duplicate set for a seamless loop (visual repeat only). -->
+          <div class="home__track-set" aria-hidden="true">
+            <div class="home__panel" />
+            <div class="home__headline-panel">
+              <h1 class="home__headline">{content.headline}</h1>
+            </div>
+            <div class="home__panel" />
+            <div class="home__panel" />
           </div>
-          <div class="home__panel home__panel--mark-host">
-            <img src="/brand/s-mark-static.svg" alt="" class="home__mark home__mark--static" />
-          </div>
-          <div class="home__panel" />
         </div>
+      </div>
+
+      <!-- The S-mark sits fixed on top of the carousel banner — it does not
+           scroll with the panels underneath it. Only one live instance is
+           needed since it no longer repeats inside the track. -->
+      <div class="home__mark-overlay">
+        <RiveMark class="home__mark" />
       </div>
     </div>
 
@@ -76,10 +79,30 @@ const content = await fetchSanity<HomeContent>(
     to translateX(-50%) moves exactly one copy's width, so the loop point
     is invisible. .home__marquee clips the overflow.
   */
+  .home__scene {
+    position: relative;
+  }
+
   .home__marquee {
     overflow: hidden;
     width: 100%;
     padding: clamp(32px, 4vw, 64px) 0;
+  }
+
+  /*
+    Fixed over the carousel banner, centered — does not scroll with
+    .home__track. Sits above the panels (z-index) so hover/touch always
+    reaches the mark regardless of what's scrolling underneath it.
+  */
+  .home__mark-overlay {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: clamp(230px, 19vw, 320px);
+    aspect-ratio: 313 / 682;
+    z-index: 3;
+    pointer-events: auto;
   }
 
   .home__track {
@@ -143,10 +166,10 @@ const content = await fetchSanity<HomeContent>(
     :global() is required here — RiveMark's root element only carries its
     own component's scope attribute, not index.astro's, so a plain scoped
     ".home__mark" selector silently never matches (Astro scoped-CSS gotcha
-    for classes forwarded into a child component via a `class` prop). The
-    static duplicate <img> doesn't strictly need :global, but sharing one
-    rule keeps both marks identical — !important guards against the same
-    equal-specificity ordering issue we hit last time.
+    for classes forwarded into a child component via a `class` prop).
+    !important guards against the same equal-specificity ordering issue we
+    hit last time. Positioned relative to .home__mark-overlay (same
+    dimensions the old mark-host panel used), not a scrolling panel.
   */
   :global(.home__mark.home__mark) {
     position: absolute !important;
