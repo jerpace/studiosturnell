@@ -1,0 +1,262 @@
+---
+// The signature "S" mark: dissolves into its 260-dot "murmuration" particle
+// cloud on hover (desktop) or finger-pass (mobile touch), then reassembles
+// into the crisp solid mark on release/leave.
+//
+// Built with GSAP driving a single interpolation state across 10 baked
+// "scatter" keyframes (src/lib/dot-positions.json), rather than a Rive
+// state machine — this replaced the earlier Rive-based plan so the
+// interaction ships without depending on an external .riv asset.
+//
+// Each hover re-shuffles the order the 10 scatter stages play in, picks a
+// random ~18% of dots to grow larger during the burst, and gives every dot
+// a random outward "float" vector it drifts along once the burst lands —
+// so no two hovers look identical.
+import dotPositions from '../lib/dot-positions.json';
+
+export interface Props {
+  class?: string;
+}
+const { class: className } = Astro.props;
+
+const dotIds = Object.keys(dotPositions) as Array<keyof typeof dotPositions>;
+---
+
+<div class={['s-mark', className].filter(Boolean).join(' ')} data-s-mark>
+  <img
+    src="/brand/s-mark-static.svg"
+    alt="Studio Sturnell"
+    class="s-mark__solid"
+    data-s-mark-solid
+  />
+  <svg
+    class="s-mark__particles"
+    viewBox="0 0 263 564"
+    data-s-mark-particles
+    aria-hidden="true"
+  >
+    {dotIds.map((id) => {
+      const [x, y] = dotPositions[id].idle;
+      return <circle id={id} cx={x} cy={y} r="2.4" />;
+    })}
+  </svg>
+</div>
+
+<style>
+  .s-mark {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 263 / 564;
+  }
+
+  .s-mark__solid,
+  .s-mark__particles {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+  }
+
+  .s-mark__particles circle {
+    fill: var(--ink, #012114);
+  }
+
+  /* Particle layer starts invisible and non-interactive; the script
+     crossfades it in as hover progress advances. If the script never runs
+     (JS disabled, reduced-motion bail-out before init), the solid mark
+     alone stays fully visible — the page never breaks. */
+  .s-mark__particles {
+    opacity: 0;
+    pointer-events: none;
+  }
+</style>
+
+<script>
+  import { gsap } from 'gsap';
+  import dotPositions from '../lib/dot-positions.json';
+
+  type Stage = 'idle' | `scatter${0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9}`;
+  type DotId = keyof typeof dotPositions;
+
+  const DOT_IDS = Object.keys(dotPositions) as DotId[];
+  const BIG_DOT_FRACTION = 0.18;
+
+  const reduceMotionQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
+
+  function shuffle<T>(arr: T[]): T[] {
+    const a = arr.slice();
+    for (let i = a.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [a[i], a[j]] = [a[j], a[i]];
+    }
+    return a;
+  }
+
+  function easeOutCubic(t: number) {
+    return 1 - Math.pow(1 - t, 3);
+  }
+
+  function pickBigDots(): Set<DotId> {
+    const count = Math.round(DOT_IDS.length * BIG_DOT_FRACTION);
+    return new Set(shuffle(DOT_IDS).slice(0, count));
+  }
+
+  function pickFloatVectors(): Record<string, [number, number]> {
+    const vectors: Record<string, [number, number]> = {};
+    for (const id of DOT_IDS) {
+      const idle = dotPositions[id].idle;
+      const end = dotPositions[id].scatter9;
+      let dx = end[0] - idle[0];
+      let dy = end[1] - idle[1];
+      const len = Math.hypot(dx, dy) || 1;
+      dx /= len;
+      dy /= len;
+      const extend = 6 + Math.random() * 14;
+      vectors[id] = [dx * extend, dy * extend];
+    }
+    return vectors;
+  }
+
+  function initSMark(root: HTMLElement) {
+    const solid = root.querySelector<HTMLImageElement>('[data-s-mark-solid]');
+    const particles = root.querySelector<SVGSVGElement>('[data-s-mark-particles]');
+    if (!solid || !particles) return;
+
+    const circleEls = new Map<DotId, SVGCircleElement>();
+    for (const id of DOT_IDS) {
+      const el = particles.querySelector<SVGCircleElement>(`#${id}`);
+      if (el) circleEls.set(id, el);
+    }
+
+    // Respect reduced-motion: keep the solid mark showing, skip the burst
+    // entirely rather than offering a toned-down version of the motion.
+    if (reduceMotionQuery.matches) return;
+
+    const state = { progress: 0, drift: 0 };
+    let stageOrder = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9];
+    let bigDots = new Set<DotId>();
+    let floatVec: Record<string, [number, number]> = {};
+    let activeTimeline: gsap.core.Timeline | null = null;
+
+    function stageAt(index: number): Stage {
+      return index < 0 ? 'idle' : (`scatter${stageOrder[index]}` as Stage);
+    }
+
+    function render() {
+      const p = Math.max(0, Math.min(10, state.progress));
+      const lower = Math.floor(p === 10 ? 9 : p);
+      const t = p === 10 ? 1 : p - lower;
+      const fromKey = stageAt(lower - 1);
+      const toKey = stageAt(lower);
+      const globalT = easeOutCubic(Math.min(1, p / 10));
+
+      for (const id of DOT_IDS) {
+        const data = dotPositions[id];
+        const from = data[fromKey];
+        const to = data[toKey];
+        let x = from[0] + (to[0] - from[0]) * t;
+        let y = from[1] + (to[1] - from[1]) * t;
+
+        const fv = floatVec[id];
+        if (fv) {
+          x += fv[0] * state.drift;
+          y += fv[1] * state.drift;
+        }
+
+        const el = circleEls.get(id);
+        if (el) {
+          el.setAttribute('cx', String(x));
+          el.setAttribute('cy', String(y));
+          const r = bigDots.has(id) ? 2.4 + 2.8 * globalT : 2.4;
+          el.setAttribute('r', String(r));
+        }
+      }
+
+      const crossfade = Math.min(1, p);
+      particles.style.opacity = String(crossfade);
+      solid.style.opacity = String(1 - crossfade);
+      particles.style.pointerEvents = crossfade > 0 ? 'auto' : 'none';
+    }
+
+    function killActive() {
+      if (activeTimeline) {
+        activeTimeline.kill();
+        activeTimeline = null;
+      }
+      gsap.killTweensOf(state);
+    }
+
+    function onHoverIn() {
+      killActive();
+      stageOrder = shuffle([0, 1, 2, 3, 4, 5, 6, 7, 8, 9]);
+      bigDots = pickBigDots();
+      floatVec = pickFloatVectors();
+
+      const tl = gsap.timeline();
+      tl.to(state, { progress: 10, duration: 0.65, ease: 'power3.out', onUpdate: render });
+      tl.to(state, { drift: 1, duration: 3, ease: 'sine.inOut', onUpdate: render });
+      tl.call(() => {
+        gsap.to(state, {
+          drift: 0.85,
+          duration: 2.4,
+          ease: 'sine.inOut',
+          yoyo: true,
+          repeat: -1,
+          onUpdate: render,
+        });
+      });
+      activeTimeline = tl;
+    }
+
+    function onHoverOut() {
+      killActive();
+      const tl = gsap.timeline();
+      tl.to(state, { drift: 0, duration: 0.35, ease: 'power1.out', onUpdate: render }, 0);
+      tl.to(state, { progress: 0, duration: 0.65, ease: 'power3.out', onUpdate: render }, 0);
+      activeTimeline = tl;
+    }
+
+    render();
+
+    root.addEventListener('pointerenter', (e) => {
+      if ((e as PointerEvent).pointerType === 'mouse') onHoverIn();
+    });
+    root.addEventListener('pointerleave', (e) => {
+      if ((e as PointerEvent).pointerType === 'mouse') onHoverOut();
+    });
+
+    // Mobile: finger passes over the mark, not tap-and-hold.
+    let touchActive = false;
+    root.addEventListener(
+      'touchmove',
+      (e) => {
+        const touch = e.touches[0];
+        const el = document.elementFromPoint(touch.clientX, touch.clientY);
+        if (root.contains(el)) {
+          if (!touchActive) {
+            touchActive = true;
+            onHoverIn();
+          }
+        } else if (touchActive) {
+          touchActive = false;
+          onHoverOut();
+        }
+      },
+      { passive: true }
+    );
+    root.addEventListener('touchend', () => {
+      if (touchActive) {
+        touchActive = false;
+        onHoverOut();
+      }
+    });
+    root.addEventListener('touchcancel', () => {
+      if (touchActive) {
+        touchActive = false;
+        onHoverOut();
+      }
+    });
+  }
+
+  document.querySelectorAll<HTMLElement>('[data-s-mark]').forEach(initSMark);
+</script>

@@ -1,6 +1,6 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
-import RiveMark from '../components/RiveMark.astro';
+import MurmurationMark from '../components/MurmurationMark.astro';
 import { fetchSanity } from '../lib/sanity';
 
 interface HomeContent {
@@ -56,14 +56,14 @@ const content = await fetchSanity<HomeContent>(
            actually detects the hover and forwards it to the mark, via
            the inline script below. -->
       <div class="home__mark-overlay">
-        <RiveMark class="home__mark" />
+        <MurmurationMark class="home__mark" />
       </div>
       <div class="home__mark-hitzone" data-mark-hitzone aria-hidden="true"></div>
     </div>
 
     <div class="home__scene-mobile">
       <div class="home__mobile-image">
-        <RiveMark class="home__mobile-mark" />
+        <MurmurationMark class="home__mobile-mark" />
       </div>
       <h1 class="home__mobile-headline">{content.headline}</h1>
     </div>
@@ -74,7 +74,7 @@ const content = await fetchSanity<HomeContent>(
   // The visible mark is now a large, click-through overlay (see the note in
   // the markup above), so hover is detected by a separate, normal-sized
   // hit-zone instead, and forwarded to the mark's own root element — the
-  // same element RiveMark.astro's own script listens on. Only mouse
+  // same element MurmurationMark.astro's own script listens on. Only mouse
   // pointerenter/leave are forwarded here: this overlay only ever shows on
   // the desktop marquee (hidden below 900px), and the mobile layout has its
   // own separate, unaffected mark instance with its own touch handling.
@@ -222,7 +222,7 @@ const content = await fetchSanity<HomeContent>(
   }
 
   /*
-    :global() is required here — RiveMark's root element only carries its
+    :global() is required here — MurmurationMark's root element only carries its
     own component's scope attribute, not index.astro's, so a plain scoped
     ".home__mark" selector silently never matches (Astro scoped-CSS gotcha
     for classes forwarded into a child component via a `class` prop).
